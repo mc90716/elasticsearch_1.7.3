@@ -983,12 +983,6 @@ public final class InternalTestCluster extends TestCluster {
 
     @Override
     public synchronized void afterTest() throws IOException {
-        
-        if(true){
-            logger.error("不清除数据！");
-            return;
-        }
-        
         wipeDataDirectories();
         wipeRepositoryDirectories();
         randomlyResetClients(); /* reset all clients - each test gets its own client based on the Random instance created above. */
@@ -1783,11 +1777,6 @@ public final class InternalTestCluster extends TestCluster {
 
     @Override
     public void assertAfterTest() throws IOException {
-        if(true){
-            logger.info("Not assertAfterTest");
-            return;
-        }
-        
         super.assertAfterTest();
         for (NodeEnvironment env : this.getInstances(NodeEnvironment.class)) {
             Set<ShardId> shardIds = env.lockedShards();

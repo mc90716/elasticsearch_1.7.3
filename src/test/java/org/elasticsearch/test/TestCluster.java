@@ -72,9 +72,9 @@ public abstract class TestCluster implements Iterable<Client>, Closeable {
      * Wipes any data that a test can leave behind: indices, templates and repositories
      */
     public void wipe() {
-//        wipeIndices("_all");
-//        wipeTemplates();
-//        wipeRepositories();
+        wipeIndices("_all");
+        wipeTemplates();
+        wipeRepositories();
     }
 
     /**
@@ -87,9 +87,9 @@ public abstract class TestCluster implements Iterable<Client>, Closeable {
      * This method checks all the things that need to be checked after each test
      */
     public void assertAfterTest() throws IOException {
-//        assertAllSearchersClosed();
-//        assertAllFilesClosed();
-//        ensureEstimatedStats();
+        assertAllSearchersClosed();
+        assertAllFilesClosed();
+        ensureEstimatedStats();
     }
 
     /**

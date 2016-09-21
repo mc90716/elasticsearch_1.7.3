@@ -129,7 +129,6 @@ public class InternalEngineTests extends ElasticsearchLuceneTestCase {
     public void setUp() throws Exception {
         super.setUp();
         // clean up shared directory
-        greaterThan(3);
         assertBusy(new Runnable() {
             @Override
             public void run() {

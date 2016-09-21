@@ -28,7 +28,6 @@ import org.elasticsearch.test.ElasticsearchIntegrationTest.ClusterScope;
 import org.junit.Test;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.test.ElasticsearchIntegrationTest.*;
 import static org.hamcrest.Matchers.hasKey;
@@ -54,8 +53,6 @@ public class UpdateByNativeScriptTests extends ElasticsearchIntegrationTest {
         ensureYellow();
 
         index("test", "type", "1", "text", "value");
-        
-        TimeUnit.DAYS.sleep(1);
 
         Map<String, Object> params = Maps.newHashMap();
         params.put("foo", "SETVALUE");
@@ -64,7 +61,6 @@ public class UpdateByNativeScriptTests extends ElasticsearchIntegrationTest {
                 .setScriptLang(NativeScriptEngineService.NAME).setScriptParams(params).get();
 
         Map<String, Object> data = client().prepareGet("test", "type", "1").get().getSource();
-        System.out.println("data="+data);
         assertThat(data, hasKey("foo"));
         assertThat(data.get("foo").toString(), is("SETVALUE"));
     }
@@ -81,18 +77,15 @@ public class UpdateByNativeScriptTests extends ElasticsearchIntegrationTest {
         private Map<String, Object> vars = Maps.newHashMapWithExpectedSize(2);
 
         public CustomScript(Map<String, Object> params) {
-            System.out.println("CustomScript...params=" + params);
             this.params = params;
         }
 
         @Override
         public Object run() {
-            System.out.println("CustomScript...vars=" + vars);
             if (vars.containsKey("ctx") && vars.get("ctx") instanceof Map) {
                 Map ctx = (Map) vars.get("ctx");
                 if (ctx.containsKey("_source") && ctx.get("_source") instanceof Map) {
                     Map source = (Map) ctx.get("_source");
-                    source.put("key123", "value123");
                     source.putAll(params);
                 }
             }
@@ -102,7 +95,6 @@ public class UpdateByNativeScriptTests extends ElasticsearchIntegrationTest {
 
         @Override
         public void setNextVar(String name, Object value) {
-            System.out.println("setNextVar..name="+name+",value="+value);
             vars.put(name, value);
         }
 

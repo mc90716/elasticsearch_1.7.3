@@ -233,8 +233,6 @@ public class ActionModule extends AbstractModule {
         }
         bind(ActionFilters.class).asEagerSingleton();
 
-        //把TransportNodesInfoAction绑定到NodesInfoAction上，调用NodesInfoAction的方法就是调用TransportNodesInfoAction
-        
         registerAction(NodesInfoAction.INSTANCE, TransportNodesInfoAction.class);
         registerAction(NodesStatsAction.INSTANCE, TransportNodesStatsAction.class);
         registerAction(NodesShutdownAction.INSTANCE, TransportNodesShutdownAction.class);

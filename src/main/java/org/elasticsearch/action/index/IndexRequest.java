@@ -76,12 +76,7 @@ public class IndexRequest extends ShardReplicationOperationRequest<IndexRequest>
          * Creates the resource. Simply adds it to the index, if there is an existing
          * document with the id, then it won't be removed.
          */
-        CREATE((byte) 1),
-        
-        /**
-         * 批量入索引，对于日志不考虑doc的version
-         */
-        BULK((byte) 2);
+        CREATE((byte) 1);
 
         private final byte id;
         private final String lowercase;
@@ -110,8 +105,6 @@ public class IndexRequest extends ShardReplicationOperationRequest<IndexRequest>
                 return INDEX;
             } else if (id == 1) {
                 return CREATE;
-            } else if (id == 2) {
-                return BULK;
             } else {
                 throw new ElasticsearchIllegalArgumentException("No type match for [" + id + "]");
             }
@@ -124,10 +117,8 @@ public class IndexRequest extends ShardReplicationOperationRequest<IndexRequest>
                     return OpType.CREATE;
                 case "index":
                     return OpType.INDEX;
-                case "bulk":
-                    return OpType.BULK;
                 default:
-                    throw new ElasticsearchIllegalArgumentException("opType [" + sOpType + "] not allowed, either [index] or [create] or [bulk] are allowed");
+                    throw new ElasticsearchIllegalArgumentException("opType [" + sOpType + "] not allowed, either [index] or [create] are allowed");
             }
         }
 

@@ -27,7 +27,6 @@ import org.apache.lucene.util.Counter;
 import org.elasticsearch.ElasticsearchIllegalArgumentException;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.component.AbstractComponent;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Streamable;
@@ -50,7 +49,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.common.collect.MapBuilder.newMapBuilder;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
@@ -112,8 +120,6 @@ public class ThreadPool extends AbstractComponent {
         int availableProcessors = EsExecutors.boundedNumberOfProcessors(settings);
         int halfProcMaxAt5 = Math.min(((availableProcessors + 1) / 2), 5);
         int halfProcMaxAt10 = Math.min(((availableProcessors + 1) / 2), 10);
-        
-        //构建线程池名字与Setting之间的map，value用到了builder模式(Effective Java)
         defaultExecutorTypeSettings = ImmutableMap.<String, Settings>builder()
                 .put(Names.GENERIC, settingsBuilder().put("type", "cached").put("keep_alive", "30s").build())
                 .put(Names.INDEX, settingsBuilder().put("type", "fixed").put("size", availableProcessors).put("queue_size", 200).build())
@@ -136,7 +142,6 @@ public class ThreadPool extends AbstractComponent {
                 .put(Names.FETCH_SHARD_STORE, settingsBuilder().put("type", "scaling").put("keep_alive", "5m").put("size", availableProcessors * 2).build())
                 .build();
 
-        //遍历defaultExecutorTypeSettings，构造出线程池名字与ExecutorHolder的map
         Map<String, ExecutorHolder> executors = Maps.newHashMap();
         for (Map.Entry<String, Settings> executor : defaultExecutorTypeSettings.entrySet()) {
             executors.put(executor.getKey(), build(executor.getKey(), groupSettings.get(executor.getKey()), executor.getValue()));
@@ -154,9 +159,7 @@ public class ThreadPool extends AbstractComponent {
         if (!executors.get(Names.GENERIC).info.getType().equals("cached")) {
             throw new ElasticsearchIllegalArgumentException("generic thread pool must be of type cached");
         }
-        //返回一个保护性拷贝？为啥？
         this.executors = ImmutableMap.copyOf(executors);
-        
         this.scheduler = new ScheduledThreadPoolExecutor(1, EsExecutors.daemonThreadFactory(settings, "scheduler"), new EsAbortPolicy());
         this.scheduler.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         this.scheduler.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
@@ -302,13 +305,6 @@ public class ThreadPool extends AbstractComponent {
         return result;
     }
 
-    /**
-     * 构建ExecutorHolder，说白了就是构建ThreadPool，主要分为same、cached、fixed和scaling四种类型的线程池
-     * @param name
-     * @param settings
-     * @param defaultSettings
-     * @return
-     */
     private ExecutorHolder build(String name, @Nullable Settings settings, Settings defaultSettings) {
         return rebuild(name, null, settings, defaultSettings);
     }
@@ -617,11 +613,6 @@ public class ThreadPool extends AbstractComponent {
         }
     }
 
-    /**
-     * 使用static的原因是ExecutorHolder是作为外围类的辅助类存在的，并不需要与外围类实例建立起映射关系【Effective Java】
-     * @author 云袭
-     *
-     */
     static class ExecutorHolder {
         private final Executor executor;
         public final Info info;

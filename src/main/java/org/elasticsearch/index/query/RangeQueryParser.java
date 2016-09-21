@@ -24,11 +24,14 @@ import org.apache.lucene.search.TermRangeQuery;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.joda.DateMathParser;
 import org.elasticsearch.common.joda.Joda;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.lucene.BytesRefs;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.core.DateFieldMapper;
+import org.elasticsearch.util.IndexUtils;
 import org.joda.time.DateTimeZone;
 
 import java.io.IOException;
@@ -41,6 +44,8 @@ import static org.elasticsearch.index.query.support.QueryParsers.wrapSmartNameQu
 public class RangeQueryParser implements QueryParser {
 
     public static final String NAME = "range";
+    
+    ESLogger logger = Loggers.getLogger(RangeQueryParser.class);
 
     @Inject
     public RangeQueryParser() {
@@ -128,7 +133,19 @@ public class RangeQueryParser implements QueryParser {
                     if ((from instanceof Number || to instanceof Number) && timeZone != null) {
                         throw new QueryParsingException(parseContext.index(), "[range] time_zone when using ms since epoch format as it's UTC based can not be applied to [" + fieldName + "]");
                     }
-                    query = ((DateFieldMapper) mapper).rangeQuery(from, to, includeLower, includeUpper, timeZone, forcedDateParser, parseContext);
+                    
+                    org.elasticsearch.index.Index index = parseContext.index();
+                    String indexName = index.getName();
+                    Object[] fromToArr = IndexUtils.parseTimeRangeByIndex(BytesRefs.toString(from), BytesRefs.toString(to), indexName);
+                   
+                    //Date dateFrom = new Date(Long.parseLong(fromToArr[0].toString()));
+                    //Date dateTo = new Date(Long.parseLong(fromToArr[1].toString()));
+                    
+                    logger.info("Index is [" + indexName + "],TimeRange is [" + fromToArr[0] + "," + fromToArr[1] + "]");
+                    
+                    query = ((DateFieldMapper) mapper).rangeQuery(BytesRefs.toBytesRef(fromToArr[0]), BytesRefs.toBytesRef(fromToArr[1]), includeLower, includeUpper, timeZone, forcedDateParser, parseContext);
+                    
+                    //query = ((DateFieldMapper) mapper).rangeQuery(from, to, includeLower, includeUpper, timeZone, forcedDateParser, parseContext);
                 } else  {
                     if (timeZone != null) {
                         throw new QueryParsingException(parseContext.index(), "[range] time_zone can not be applied to non date field [" + fieldName + "]");

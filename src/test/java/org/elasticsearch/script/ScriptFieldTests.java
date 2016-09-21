@@ -58,11 +58,8 @@ public class ScriptFieldTests extends ElasticsearchIntegrationTest {
 
         client().admin().indices().prepareFlush("test").execute().actionGet();
         SearchResponse sr = client().prepareSearch("test").setQuery(QueryBuilders.matchAllQuery())
-                .addScriptField("int", "native", "int", null)
-//                .addScriptField("float", "native", "float", null)
-//                .addScriptField("double", "native", "double", null).addScriptField("long", "native", "long", null)
-                .execute().actionGet();
-        System.out.println("sr="+sr);
+                .addScriptField("int", "native", "int", null).addScriptField("float", "native", "float", null)
+                .addScriptField("double", "native", "double", null).addScriptField("long", "native", "long", null).execute().actionGet();
         assertThat(sr.getHits().hits().length, equalTo(6));
         for (SearchHit hit : sr.getHits().getHits()) {
             Object result = hit.getFields().get("int").getValues().get(0);
@@ -128,7 +125,6 @@ public class ScriptFieldTests extends ElasticsearchIntegrationTest {
     static class DoubleScript extends AbstractSearchScript {
         @Override
         public Object run() {
-//            docFieldStrings("field").getValue().
             return doubleArray;
         }
     }

@@ -207,6 +207,7 @@ public class BalancedShardsAllocator extends AbstractComponent implements Shards
             if (sum <= 0.0f) {
                 throw new ElasticsearchIllegalArgumentException("Balance factors must sum to a value > 0 but was: " + sum);
             }
+            //  0.45/0.95   0.5/0.95    0/0.95
             theta = new float[]{shardBalance / sum, indexBalance / sum, primaryBalance / sum};
             this.indexBalance = indexBalance;
             this.shardBalance = shardBalance;

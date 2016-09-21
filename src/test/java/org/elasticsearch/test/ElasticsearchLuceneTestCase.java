@@ -19,8 +19,6 @@
 
 package org.elasticsearch.test;
 
-import static org.hamcrest.Matchers.greaterThan;
-
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.carrotsearch.randomizedtesting.annotations.Listeners;
 import com.carrotsearch.randomizedtesting.annotations.ThreadLeakLingering;

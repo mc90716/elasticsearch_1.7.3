@@ -79,7 +79,6 @@ public class RestMainAction extends BaseRestHandler {
         builder.field("cluster_name", clusterName.value());
         builder.startObject("version")
                 .field("number", version.number())
-                .field("author", "created by huangfei")
                 .field("build_hash", Build.CURRENT.hash())
                 .field("build_timestamp", Build.CURRENT.timestamp())
                 .field("build_snapshot", version.snapshot)

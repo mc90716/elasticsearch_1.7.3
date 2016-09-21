@@ -21,7 +21,11 @@ package org.elasticsearch.indices.cache.query;
 
 import com.carrotsearch.hppc.ObjectOpenHashSet;
 import com.carrotsearch.hppc.ObjectSet;
-import com.google.common.cache.*;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
+import com.google.common.cache.Weigher;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.util.Accountable;
@@ -34,23 +38,21 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.component.AbstractComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.MemorySizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
-import org.elasticsearch.index.shard.IndexShardState;
 import org.elasticsearch.index.shard.IndexShard;
-import org.elasticsearch.search.SearchShardTarget;
+import org.elasticsearch.index.shard.IndexShardState;
 import org.elasticsearch.search.internal.SearchContext;
 import org.elasticsearch.search.internal.ShardSearchRequest;
 import org.elasticsearch.search.query.QueryPhase;
 import org.elasticsearch.search.query.QuerySearchResult;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -101,6 +103,8 @@ public class IndicesQueryCache extends AbstractComponent implements RemovalListe
     private final int concurrencyLevel;
 
     private volatile Cache<Key, Value> cache;
+    
+    ESLogger logger = Loggers.getLogger(IndicesQueryCache.class);
 
     @Inject
     public IndicesQueryCache(Settings settings, ClusterService clusterService, ThreadPool threadPool) {
@@ -213,7 +217,9 @@ public class IndicesQueryCache extends AbstractComponent implements RemovalListe
         Key key = buildKey(request, context);
         Loader loader = new Loader(queryPhase, context, key);
         Value value = cache.get(key, loader);
+        String indexName = request.index();
         if (loader.isLoaded()) {
+            logger.info("Search Index [" + indexName + "] Cache Miss");
             key.shard.queryCache().onMiss();
             // see if its the first time we see this reader, and make sure to register a cleanup key
             CleanupKey cleanupKey = new CleanupKey(context.indexShard(), ((DirectoryReader) context.searcher().getIndexReader()).getVersion());
@@ -224,6 +230,7 @@ public class IndicesQueryCache extends AbstractComponent implements RemovalListe
                 }
             }
         } else {
+            logger.info("Search Index [" + indexName + "] Cache Hit");
             key.shard.queryCache().onHit();
             // restore the cached query result into the context
             final QuerySearchResult result = context.queryResult();

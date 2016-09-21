@@ -322,9 +322,7 @@ public class NettyTransport extends AbstractLifecycleComponent<Transport> implem
                     new NioWorkerPool(Executors.newCachedThreadPool(daemonThreadFactory(settings, TRANSPORT_CLIENT_WORKER_THREAD_NAME_PREFIX)), workerCount),
                     new HashedWheelTimer(daemonThreadFactory(settings, "transport_client_timer"))));
         }
-        //为Netty的ClientBootstrap添加Pipeline
         clientBootstrap.setPipelineFactory(configureClientChannelPipelineFactory());
-        
         clientBootstrap.setOption("connectTimeoutMillis", connectTimeout.millis());
 
         String tcpNoDelay = componentSettings.get("tcp_no_delay", settings.get(TCP_NO_DELAY, "true"));
@@ -463,9 +461,7 @@ public class NettyTransport extends AbstractLifecycleComponent<Transport> implem
                     Executors.newCachedThreadPool(workerFactory),
                     workerCount));
         }
-        //为Netty的ServerBootstrap添加Pipeline
         serverBootstrap.setPipelineFactory(configureServerChannelPipelineFactory(name, settings));
-        
         if (!"default".equals(tcpNoDelay)) {
             serverBootstrap.setOption("child.tcpNoDelay", Booleans.parseBoolean(tcpNoDelay, null));
         }
@@ -708,7 +704,6 @@ public class NettyTransport extends AbstractLifecycleComponent<Transport> implem
                 buffer = bytes.toChannelBuffer();
             }
             NettyHeader.writeHeader(buffer, requestId, status, version);
-            //利用netty将请求发送出去：targetChannel
             ChannelFuture future = targetChannel.write(buffer);
             ReleaseChannelFutureListener listener = new ReleaseChannelFutureListener(bytes);
             future.addListener(listener);
@@ -1019,7 +1014,6 @@ public class NettyTransport extends AbstractLifecycleComponent<Transport> implem
             this.settings = settings;
         }
 
-        //在Netty的Server启动的时候会回调这个方法，注册Pipeline
         @Override
         public ChannelPipeline getPipeline() throws Exception {
             ChannelPipeline channelPipeline = Channels.pipeline();
@@ -1036,7 +1030,6 @@ public class NettyTransport extends AbstractLifecycleComponent<Transport> implem
                 sizeHeader.setMaxCumulationBufferComponents(nettyTransport.maxCompositeBufferComponents);
             }
             channelPipeline.addLast("size", sizeHeader);
-            //对Netty的ChannelPipeline添加ChannelHandler
             channelPipeline.addLast("dispatcher", new MessageChannelHandler(nettyTransport, nettyTransport.logger, name));
             return channelPipeline;
         }

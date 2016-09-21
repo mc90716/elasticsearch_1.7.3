@@ -252,7 +252,7 @@ public abstract class ElasticsearchIntegrationTest extends ElasticsearchTestCase
     /**
      * Default maximum number of shards for an index
      */
-    protected static final int DEFAULT_MAX_NUM_SHARDS = 3;
+    protected static final int DEFAULT_MAX_NUM_SHARDS = 10;
 
     /**
      * The current cluster depending on the configured {@link Scope}.

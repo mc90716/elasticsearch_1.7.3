@@ -146,8 +146,6 @@ public class SearchFieldsTests extends ElasticsearchIntegrationTest {
                 .execute().actionGet();
 
         assertNoFailures(response);
-        
-        System.out.println("response="+response);
 
         assertThat(response.getHits().totalHits(), equalTo(3l));
         assertThat(response.getHits().getAt(0).isSourceEmpty(), equalTo(true));

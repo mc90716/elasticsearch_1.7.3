@@ -180,7 +180,7 @@ public class Bootstrap {
         keepAliveLatch.countDown();
     }
 
-    public static void main(String[] args) {  
+    public static void main(String[] args) {
         System.setProperty("es.logger.prefix", "");
         bootstrap = new Bootstrap();
         final String pidFile = System.getProperty("es.pidfile", System.getProperty("es-pidfile"));

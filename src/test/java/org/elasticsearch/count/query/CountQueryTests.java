@@ -52,8 +52,7 @@ public class CountQueryTests extends ElasticsearchIntegrationTest {
         client().prepareIndex("test", "type1", "1").setSource("field1", "value1_1", "field2", "value2_1").setRefresh(true).get();
 
         CountResponse countResponse = client().prepareCount().setSource(new BytesArray("{ \"query\" : { \"term\" : { \"field1\" : \"value1_1\" }}}").array()).get();
-        logger.info("countResponse="+countResponse.getCount());
-        assertHitCount(countResponse, 1);
+        assertHitCount(countResponse, 1l);
     }
 
     @Test

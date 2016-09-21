@@ -595,7 +595,6 @@ public abstract class Engine implements Closeable {
         static enum Type {
             CREATE,
             INDEX,
-            BULK,  //对于日志场景，不考虑doc的version
             DELETE
         }
 
@@ -757,7 +756,6 @@ public abstract class Engine implements Closeable {
 
     public static final class Index extends IndexingOperation {
         private boolean created;
-        private Type type = Type.INDEX;
 
         public Index(DocumentMapper docMapper, Term uid, ParsedDocument doc, long version, VersionType versionType, Origin origin, long startTime, boolean canHaveDuplicates) {
             super(docMapper, uid, doc, version, versionType, origin, startTime, canHaveDuplicates);
@@ -770,15 +768,10 @@ public abstract class Engine implements Closeable {
         public Index(DocumentMapper docMapper, Term uid, ParsedDocument doc) {
             super(docMapper, uid, doc);
         }
-        
-        public void setOpType(Type type) {
-            this.type = type;
-        }
 
         @Override
         public Type opType() {
-//            return Type.INDEX;
-            return type;
+            return Type.INDEX;
         }
 
         /**

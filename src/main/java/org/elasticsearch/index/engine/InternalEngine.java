@@ -19,8 +19,6 @@
 
 package org.elasticsearch.index.engine;
 
-import org.elasticsearch.action.index.IndexRequest.OpType;
-
 import com.google.common.collect.Lists;
 import org.apache.lucene.index.*;
 import org.apache.lucene.index.IndexWriter.IndexReaderWarmer;
@@ -251,16 +249,15 @@ public class InternalEngine extends Engine {
 
     @Override
     public void create(Create create) throws EngineException {
-//        logger.debug("create...create={}",create);
         try (ReleasableLock lock = readLock.acquire()) {
             ensureOpen();
             if (create.origin() == Operation.Origin.RECOVERY) {
                 // Don't throttle recovery operations
                 innerCreate(create);
             } else {
-//                try (Releasable r = throttle.acquireThrottle()) {
+                try (Releasable r = throttle.acquireThrottle()) {
                     innerCreate(create);
-//                }
+                }
             }
         } catch (OutOfMemoryError | IllegalStateException | IOException t) {
             maybeFailEngine("create", t);
@@ -293,7 +290,7 @@ public class InternalEngine extends Engine {
     }
 
     private void innerCreateNoLock(Create create, long currentVersion, VersionValue versionValue) throws IOException {
-//        logger.info("innerCreateNoLock...{}", 1);
+
         // same logic as index
         long updatedVersion;
         long expectedVersion = create.version();
@@ -336,14 +333,12 @@ public class InternalEngine extends Engine {
         create.updateVersion(updatedVersion);
 
         if (doUpdate) {
-            logger.debug("index.updateDocument,docs.size={}", create.docs().size());
             if (create.docs().size() > 1) {
                 indexWriter.updateDocuments(create.uid(), create.docs(), create.analyzer());
             } else {
                 indexWriter.updateDocument(create.uid(), create.docs().get(0), create.analyzer());
             }
         } else {
-            logger.debug("index.addDocument,docs.size={}", create.docs().size());
             if (create.docs().size() > 1) {
                 indexWriter.addDocuments(create.docs(), create.analyzer());
             } else {
@@ -359,20 +354,15 @@ public class InternalEngine extends Engine {
 
     @Override
     public void index(Index index) throws EngineException {
-//        logger.debug("index...index.optype={}",index.opType());
         try (ReleasableLock lock = readLock.acquire()) {
             ensureOpen();
             if (index.origin() == Operation.Origin.RECOVERY) {
                 // Don't throttle recovery operations
                 innerIndex(index);
             } else {
-//                try (Releasable r = throttle.acquireThrottle()) {
-                if(index.opType() == Operation.Type.BULK){
-                    innerIndexWhenBulk(index);
-                }else{
+                try (Releasable r = throttle.acquireThrottle()) {
                     innerIndex(index);
                 }
-//                }
             }
         } catch (OutOfMemoryError | IllegalStateException | IOException t) {
             maybeFailEngine("index", t);
@@ -409,8 +399,6 @@ public class InternalEngine extends Engine {
 
     private void innerIndex(Index index) throws IOException {
         synchronized (dirtyLock(index.uid())) {
-//            logger.info("innerIndex,{}", "params");
-
             final long currentVersion;
             VersionValue versionValue = versionMap.getUnderLock(index.uid().bytes());
             if (versionValue == null) {
@@ -438,7 +426,6 @@ public class InternalEngine extends Engine {
             if (currentVersion == Versions.NOT_FOUND) {
                 // document does not exists, we can optimize for create
                 index.created(true);
-                logger.debug("index.create,docs.size={}", index.docs().size());
                 if (index.docs().size() > 1) {
                     indexWriter.addDocuments(index.docs(), index.analyzer());
                 } else {
@@ -448,8 +435,6 @@ public class InternalEngine extends Engine {
                 if (versionValue != null) {
                     index.created(versionValue.delete()); // we have a delete which is not GC'ed...
                 }
-                
-                logger.debug("index.update,docs.size={}", index.docs().size());
                 if (index.docs().size() > 1) {
                     indexWriter.updateDocuments(index.uid(), index.docs(), index.analyzer());
                 } else {
@@ -462,19 +447,6 @@ public class InternalEngine extends Engine {
 
             indexingService.postIndexUnderLock(index);
         }
-    }
-    
-    //批量写索引
-    private void innerIndexWhenBulk(Index index) throws IOException {
-        // document does not exists, we can optimize for create
-        index.created(true);
-        if (index.docs().size() == 1) {
-            indexWriter.addDocument(index.docs().get(0), index.analyzer());
-        } else {
-            indexWriter.addDocuments(index.docs(), index.analyzer());
-        }
-        translog.add(new Translog.Index(index));
-        indexingService.postIndexUnderLock(index);
     }
 
     @Override
@@ -1095,12 +1067,6 @@ public class InternalEngine extends Engine {
         }
     }
 
-    /**
-     * 创建IndexWriter，用于建立索引。IndexWriter创建的时候需要指定merge策略以及其他参数
-     * 在需要merge的时候，进行Merger操作
-     * @return
-     * @throws IOException
-     */
     private IndexWriter createWriter() throws IOException {
         try {
             boolean create = !Lucene.indexExists(store.directory());

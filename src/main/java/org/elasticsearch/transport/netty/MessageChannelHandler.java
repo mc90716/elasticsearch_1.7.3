@@ -65,7 +65,6 @@ public class MessageChannelHandler extends SimpleChannelUpstreamHandler {
         super.writeComplete(ctx, e);
     }
 
-    //Netty接收消息，也就是ES接收请求
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
         Transports.assertTransportThread();
@@ -206,8 +205,7 @@ public class MessageChannelHandler extends SimpleChannelUpstreamHandler {
         }
     }
 
-    @SuppressWarnings("rawtypes")
-	protected String handleRequest(Channel channel, StreamInput buffer, long requestId, Version version) throws IOException {
+    protected String handleRequest(Channel channel, StreamInput buffer, long requestId, Version version) throws IOException {
         final String action = buffer.readString();
         transportServiceAdapter.onRequestReceived(requestId, action);
         final NettyTransportChannel transportChannel = new NettyTransportChannel(transport, transportServiceAdapter, action, channel, requestId, version, profileName);
@@ -221,7 +219,6 @@ public class MessageChannelHandler extends SimpleChannelUpstreamHandler {
             request.readFrom(buffer);
             if (ThreadPool.Names.SAME.equals(handler.executor())) {
                 //noinspection unchecked
-            	//创建索引的请求会在这里接收
                 handler.messageReceived(request, transportChannel);
             } else {
                 threadPool.executor(handler.executor()).execute(new RequestHandler(handler, request, transportChannel, action));

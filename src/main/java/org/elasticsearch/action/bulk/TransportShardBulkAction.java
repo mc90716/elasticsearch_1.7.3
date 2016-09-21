@@ -128,7 +128,6 @@ public class TransportShardBulkAction extends TransportShardReplicationOperation
         return clusterState.routingTable().index(request.concreteIndex()).shard(request.request().shardId()).shardsIt();
     }
 
-    //创建索引的入口
     @Override
     protected Tuple<BulkShardResponse, BulkShardRequest> shardOperationOnPrimary(ClusterState clusterState, PrimaryOperationRequest shardRequest) {
         final BulkShardRequest request = shardRequest.request;
@@ -137,19 +136,15 @@ public class TransportShardBulkAction extends TransportShardReplicationOperation
         final Set<String> mappingTypesToUpdate = Sets.newHashSet();
 
         long[] preVersions = new long[request.items().length];
-        logger.debug("shardOperationOnPrimary request.items = {}", request.items().length);
         VersionType[] preVersionTypes = new VersionType[request.items().length];
-        //检索bulk中的每一条记录
         for (int requestIndex = 0; requestIndex < request.items().length; requestIndex++) {
             BulkItemRequest item = request.items()[requestIndex];
-            //判断是什么类型的请求
             if (item.request() instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) item.request();
                 preVersions[requestIndex] = indexRequest.version();
                 preVersionTypes[requestIndex] = indexRequest.versionType();
                 try {
                     try {
-                    	//建索引并且返回结果
                         WriteResult result = shardIndexOperation(request, indexRequest, clusterState, indexShard, true);
                         // add the response
                         IndexResponse indexResponse = result.response();
@@ -387,7 +382,7 @@ public class TransportShardBulkAction extends TransportShardReplicationOperation
 
     private WriteResult shardIndexOperation(BulkShardRequest request, IndexRequest indexRequest, ClusterState clusterState,
                                             IndexShard indexShard, boolean processed) {
-//        logger.debug("shardIndexOperation optype={}", indexRequest.opType());
+
         // validate, if routing is required, that we got routing
         MappingMetaData mappingMd = clusterState.metaData().index(request.index()).mappingOrDefault(indexRequest.type());
         if (mappingMd != null && mappingMd.routing().required()) {
@@ -410,16 +405,10 @@ public class TransportShardBulkAction extends TransportShardReplicationOperation
         boolean created;
         Engine.IndexingOperation op;
         try {
-            if (indexRequest.opType() == IndexRequest.OpType.BULK || 
-                    indexRequest.opType() == IndexRequest.OpType.INDEX) {
+            if (indexRequest.opType() == IndexRequest.OpType.INDEX) {
                 Engine.Index index = indexShard.prepareIndex(sourceToParse, indexRequest.version(), indexRequest.versionType(), Engine.Operation.Origin.PRIMARY, request.canHaveDuplicates() || indexRequest.canHaveDuplicates());
                 if (index.parsedDoc().mappingsModified()) {
                     mappingTypeToUpdate = indexRequest.type();
-                }
-                if(indexRequest.opType() == IndexRequest.OpType.BULK){
-                    index.setOpType(org.elasticsearch.index.engine.Engine.Operation.Type.BULK);
-                }else{
-                    index.setOpType(org.elasticsearch.index.engine.Engine.Operation.Type.INDEX);
                 }
                 indexShard.index(index);
                 version = index.version();
@@ -570,11 +559,7 @@ public class TransportShardBulkAction extends TransportShardReplicationOperation
                     SourceToParse sourceToParse = SourceToParse.source(SourceToParse.Origin.REPLICA, indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
                             .routing(indexRequest.routing()).parent(indexRequest.parent()).timestamp(indexRequest.timestamp()).ttl(indexRequest.ttl());
 
-                    if (indexRequest.opType() == IndexRequest.OpType.BULK) {
-                        Engine.Index index = indexShard.prepareIndex(sourceToParse, indexRequest.version(), indexRequest.versionType(), Engine.Operation.Origin.REPLICA, request.canHaveDuplicates() || indexRequest.canHaveDuplicates());
-                        index.setOpType(org.elasticsearch.index.engine.Engine.Operation.Type.BULK);
-                        indexShard.index(index);
-                    } if (indexRequest.opType() == IndexRequest.OpType.INDEX) {
+                    if (indexRequest.opType() == IndexRequest.OpType.INDEX) {
                         Engine.Index index = indexShard.prepareIndex(sourceToParse, indexRequest.version(), indexRequest.versionType(), Engine.Operation.Origin.REPLICA, request.canHaveDuplicates() || indexRequest.canHaveDuplicates());
                         indexShard.index(index);
                     } else {

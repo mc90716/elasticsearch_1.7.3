@@ -351,16 +351,12 @@ public abstract class TransportShardReplicationOperationAction<Request extends S
             if (checkBlocks() == false) {
                 return;
             }
-            //获得所有的shard的迭代器
             final ShardIterator shardIt = shards(observer.observedState(), internalRequest);
-            //获取到主分片的routing
             final ShardRouting primary = resolvePrimary(shardIt);
-            //没有主分片的话退出
             if (primary == null) {
                 retryBecauseUnavailable(shardIt.shardId(), "No active shards.");
                 return;
             }
-            //主分片未被激活，退出
             if (primary.active() == false) {
                 logger.trace("primary shard [{}] is not yet active, scheduling a retry.", primary.shardId());
                 retryBecauseUnavailable(shardIt.shardId(), "Primary shard is not active or isn't assigned to a known node.");
@@ -430,10 +426,8 @@ public abstract class TransportShardReplicationOperationAction<Request extends S
          * send the request to the node holding the primary or execute if local
          */
         protected void routeRequestOrPerformLocally(final ShardRouting primary, final ShardIterator shardsIt) {
-        	//如果当前节点就是主分片所在的节点
             if (primary.currentNodeId().equals(observer.observedState().nodes().localNodeId())) {
                 try {
-                	//判断是在新线程中执行还是在当前线程执行
                     if (internalRequest.request().operationThreaded()) {
                         threadPool.executor(executor).execute(new AbstractRunnable() {
                             @Override
@@ -453,7 +447,7 @@ public abstract class TransportShardReplicationOperationAction<Request extends S
                     // no commit: check threadpool rejection.
                     finishAsFailed(t);
                 }
-            } else {//如果当前节点不是主分片所在的节点，那么发送请求到主分片的节点上
+            } else {
                 DiscoveryNode node = observer.observedState().nodes().get(primary.currentNodeId());
                 transportService.sendRequest(node, actionName, internalRequest.request(), transportOptions, new BaseTransportResponseHandler<Response>() {
 
@@ -577,10 +571,8 @@ public abstract class TransportShardReplicationOperationAction<Request extends S
             try {
                 indexShardReference = getIndexShardOperationsCounter(primary.shardId());
                 PrimaryOperationRequest por = new PrimaryOperationRequest(primary.id(), internalRequest.concreteIndex(), internalRequest.request());
-                //先对主分片进行建索引，建完之后
                 Tuple<Response, ReplicaRequest> primaryResponse = shardOperationOnPrimary(observer.observedState(), por);
                 logger.trace("operation completed on primary [{}]", primary);
-                //当主分片操作完成之后，对副本进行操作，对于副本的操作是在后面进行的
                 replicationPhase = new ReplicationPhase(shardsIt, primaryResponse.v2(), primaryResponse.v1(), observer, primary, internalRequest, listener, indexShardReference);
             } catch (Throwable e) {
                 internalRequest.request.setCanHaveDuplicates();

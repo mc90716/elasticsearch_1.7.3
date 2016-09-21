@@ -193,7 +193,6 @@ public class TransportIndexAction extends TransportShardReplicationOperationActi
                 if (index.parsedDoc().mappingsModified()) {
                     mappingUpdatedAction.updateMappingOnMaster(shardRequest.shardId.getIndex(), index.docMapper(), indexService.indexUUID());
                 }
-                //建索引
                 indexShard.index(index);
                 version = index.version();
                 op = index;
@@ -204,7 +203,6 @@ public class TransportIndexAction extends TransportShardReplicationOperationActi
                 if (create.parsedDoc().mappingsModified()) {
                     mappingUpdatedAction.updateMappingOnMaster(shardRequest.shardId.getIndex(), create.docMapper(), indexService.indexUUID());
                 }
-                //建索引
                 indexShard.create(create);
                 version = create.version();
                 op = create;

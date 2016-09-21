@@ -30,9 +30,9 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-@ElasticsearchIntegrationTest.ClusterScope(scope = ElasticsearchIntegrationTest.Scope.TEST,numDataNodes =2)
+
 public class IndexRequestBuilderTests extends ElasticsearchIntegrationTest {
+    
     
     @Test
     public void testSetSource() throws InterruptedException, ExecutionException {
@@ -49,8 +49,6 @@ public class IndexRequestBuilderTests extends ElasticsearchIntegrationTest {
                 client().prepareIndex("test", "test").setSource(map)
         };
         indexRandom(true, builders);
-        
-//        TimeUnit.DAYS.sleep(1);
         SearchResponse searchResponse = client().prepareSearch("test").setQuery(QueryBuilders.termQuery("test_field", "foobar")).get();
         ElasticsearchAssertions.assertHitCount(searchResponse, builders.length);
     }

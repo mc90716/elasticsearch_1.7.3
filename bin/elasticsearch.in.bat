@@ -30,7 +30,7 @@ REM min and max heap sizes should be set to the same value to avoid
 REM stop-the-world GC pauses during resize, and so that we can lock the
 REM heap in memory on startup to prevent any of it from being swapped
 REM out.
-set JAVA_OPTS=%JAVA_OPTS% -Xms%ES_MIN_MEM% -Xmx%ES_MAX_MEM%
+set JAVA_OPTS=%JAVA_OPTS% -Xms512M -Xmx512M
 
 REM new generation
 if NOT "%ES_HEAP_NEWSIZE%" == "" (

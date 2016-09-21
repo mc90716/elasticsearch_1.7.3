@@ -40,7 +40,6 @@ public class NativeScript3 extends AbstractSearchScript {
 
     @Override
     public Object run() {
-//        doc().entrySet().iterator()
         return 1.2 * docFieldLongs("x").getValue() / docFieldDoubles("y").getValue();
     }
 }

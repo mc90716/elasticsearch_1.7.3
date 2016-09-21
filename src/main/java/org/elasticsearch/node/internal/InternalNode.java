@@ -277,7 +277,7 @@ public final class InternalNode implements Node {
         injector.getInstance(ResourceWatcherService.class).start();
         injector.getInstance(TribeService.class).start();
 
-        logger.info("started <branch created by yunxi>");
+        logger.info("started");
 
         return this;
     }

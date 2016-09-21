@@ -19,11 +19,6 @@
 
 package org.elasticsearch.common.math;
 
-/**
- * 使用枚举类型来强化单例的能力
- * @author 云袭
- *
- */
 public enum MathUtils {
     ;
 
