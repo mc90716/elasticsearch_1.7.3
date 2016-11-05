@@ -86,6 +86,7 @@ public class PrioritizedEsThreadPoolExecutor extends EsThreadPoolExecutor {
             command = new TieBreakingPrioritizedRunnable(command, Priority.NORMAL, insertionOrder.incrementAndGet());
         }
         super.execute(command);
+        //如果有设置超时回调，那么command类型必须是TieBreakingPrioritizedRunnable，然后启动一个schedule
         if (timeout.nanos() >= 0) {
             if (command instanceof TieBreakingPrioritizedRunnable) {
                 ((TieBreakingPrioritizedRunnable) command).scheduleTimeout(timer, timeoutCallback, timeout);

@@ -26,7 +26,8 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import java.io.IOException;
 
 /**
- *
+ *  ES对于优先级的设计，Priority类实现Comparable接口，同时Priority类内部定义了
+ *  6种优先级，每个优先级使用一个byte来表示
  */
 public final class Priority implements Comparable<Priority> {
 

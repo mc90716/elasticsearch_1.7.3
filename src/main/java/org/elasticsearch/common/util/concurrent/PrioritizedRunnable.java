@@ -27,6 +27,13 @@ public abstract class PrioritizedRunnable implements Runnable, Comparable<Priori
 
     private final Priority priority;
 
+    /**
+     * 此处使用静态方法是因为该类时抽象类，不能实例化调用，因此通过使用静态方法就可以不用实例化而进行调用
+     * 方法使用static修饰，所以Wrapped类也必须使用static修饰
+     * @param runnable
+     * @param priority
+     * @return
+     */
     public static PrioritizedRunnable wrap(Runnable runnable, Priority priority) {
         return new Wrapped(runnable, priority);
     }
